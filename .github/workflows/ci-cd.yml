@@ -58,19 +58,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   deploy-to-render:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      # Nuevo: valida secrets de Render antes de llamar al API
-      - name: Check required secrets (Render)
-        run: |
-          [ -n "${{ secrets.RENDER_API_KEY }}" ] || { echo "Falta RENDER_API_KEY"; exit 1; }
-          [ -n "${{ secrets.RENDER_SERVICE_ID }}" ] || { echo "Falta RENDER_SERVICE_ID"; exit 1; }
-
-      - name: Trigger Render Deploy
-        run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache":false}' \
-            https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys
+     needs: build-and-push
+     runs-on: ubuntu-latest
+     if: ${{ success() && secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
+     steps:
+     - name: Trigger Render Deploy
+       run: |
+        curl -s -X POST \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache":false}' \
+          https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys
